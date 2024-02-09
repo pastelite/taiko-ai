@@ -68,6 +68,33 @@ class TimingPoints:
 
     def __str__(self):
         return str(self.data)
+    
+    def inhabited_points(self):
+        return [timing for timing in self.data if timing.uninherited]
+    
+    def beats_point(self, end: int):
+        timing_points = self.inhabited_points()
+        timing_points_index = 0
+        cur_timing = timing_points[0].time
+        next_timing_points_start = -1
+        if len(timing_points) > 1:
+            next_timing_points_start = timing_points[1].time
+        beats = []
+        
+        while(True):
+            if cur_timing > end:
+                break
+            
+            beats.append(round(cur_timing))
+            cur_timing += timing_points[timing_points_index].beat_length
+            
+            if cur_timing > next_timing_points_start and next_timing_points_start > 0:
+                timing_points_index += 1
+                next_timing_points_start = -1
+                if timing_points_index < len(timing_points):
+                    next_timing_points_start = timing_points[timing_points_index].time
+        
+        return beats
 
 
 if __name__ == "__main__":
@@ -90,3 +117,6 @@ if __name__ == "__main__":
     #     print(cur_timing)
     #     cur_timing = cur_timing.parse_next(to_parse[i])
     print(cur_timing.data[0])
+    print(cur_timing.inhabited_points()[0])
+    print(cur_timing.beats_point(100000))
+    
