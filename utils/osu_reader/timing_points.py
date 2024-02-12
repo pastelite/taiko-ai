@@ -25,9 +25,9 @@ class TimingPoint:
     def parse(current: str):
         data = current.split(",")
 
-        time = int(data[0])
+        time = round(float(data[0]))
         beat_length = float(data[1])
-        meter = int(data[2])
+        meter = round(float(data[2]))
         uninherited = bool(int(data[6]))
         slider_velocity = 1
 
@@ -39,9 +39,9 @@ class TimingPoint:
     def parse_next(self, next: str):
         data = next.split(",")
 
-        time = int(data[0])
+        time = round(float(data[0]))
         beat_length = float(data[1])
-        meter = int(data[2])
+        meter = round(float(data[2]))
         uninherited = bool(int(data[6]))
         slider_velocity = 1
 
@@ -74,6 +74,9 @@ class TimingPoints:
 
     def beats_point(self, end: int):
         timing_points = self.inhabited_points()
+        # print(f"{timing_points=}")
+        # for timing in timing_points:
+        #     print(timing)
         timing_points_index = 0
         cur_timing = timing_points[0].time
         next_timing_points_start = -1
@@ -88,11 +91,19 @@ class TimingPoints:
             beats.append(round(cur_timing))
             cur_timing += timing_points[timing_points_index].beat_length
 
-            if cur_timing > next_timing_points_start and next_timing_points_start > 0:
-                timing_points_index += 1
+            if (
+                next_timing_points_start != -1
+                and cur_timing > next_timing_points_start
+                and next_timing_points_start > 0
+            ):
                 next_timing_points_start = -1
+                timing_points_index += 1
+
                 if timing_points_index < len(timing_points):
                     next_timing_points_start = timing_points[timing_points_index].time
+                else:
+                    timing_points_index -= 1
+                # print(f"{timing_points_index=} {len(timing_points)} {next_timing_points_start=}")
 
         return beats
 

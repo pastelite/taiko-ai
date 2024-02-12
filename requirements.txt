@@ -1,4 +1,6 @@
 matplotlib==3.7.2
-torch==2.2.0
-torchaudio==2.2.0
-wget==3.2
+ossapi==3.4.4
+python-dotenv==1.0.1
+torch==2.2.0 --index-url https://download.pytorch.org/whl/cu118
+torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu118
+librosa==0.10.1
