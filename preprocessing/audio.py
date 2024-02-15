@@ -6,7 +6,7 @@ import torchaudio
 
 class AudioTransformPipeline(nn.Module):
         
-    def __init__(self, orig_sr, ideal_sr, duration, hop_length=200):
+    def __init__(self, orig_sr, ideal_sr, duration, n_mels=128, hop_length=200):
         super().__init__()
         self.sample_rate = orig_sr
         self.ideal_sr = ideal_sr
@@ -18,9 +18,12 @@ class AudioTransformPipeline(nn.Module):
         )
         self.spec = torchaudio.transforms.Spectrogram(hop_length=hop_length)
         self.stretch = torchaudio.transforms.TimeStretch()
-        self.mel = torchaudio.transforms.MelScale()
+        self.mel = torchaudio.transforms.MelScale(n_mels=n_mels)
 
     def forward(self, waveform):
+        # mono
+        waveform = torch.mean(waveform, dim=0, keepdim=True)
+        
         resampled = self.resample(waveform)
         # print(resampled.shape)
         
