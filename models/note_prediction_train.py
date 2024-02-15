@@ -29,14 +29,24 @@ def train_note_prediction(epochs=1):
             
             try:
                 for i, data in enumerate(dataloader):
-                    inputs, labels = data
-                    inputs, labels = inputs.to(device), labels.to(device, dtype=torch.float)
+                    input, labels = data
+                    diff, audio = input
+                    # print(diff.shape, audio.shape, labels.shape)
+                    # diff = torch.tensor([diff])
+                    diff = diff.unsqueeze(1)
+                    
+                    # diff = diff.to(device, dtype=torch.float)
+                    # audio = audio.to(device, dtype=torch.float)
+                    # labels = labels.to(device, dtype=torch.float)
+                    
+                    diff, audio, labels = diff.to(device, dtype=torch.float), audio.to(device, dtype=torch.float), labels.to(device, dtype=torch.float)
+                    # inputs, labels = inputs.to(device), labels.to(device, dtype=torch.float)
                     
                     # Zero the parameter gradients
                     optimizer.zero_grad()
                     
                     # Forward + backward + optimize
-                    outputs = model(inputs)
+                    outputs = model(audio,diff)
                     loss = criterion(outputs, labels)
                     loss.backward()
                     optimizer.step()
