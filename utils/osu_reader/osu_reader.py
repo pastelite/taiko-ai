@@ -2,7 +2,7 @@ import os
 import pprint
 import re
 from enum import Enum, IntEnum
-from typing import Optional
+from typing import Generator, Iterator, Optional
 import librosa
 import torchaudio
 
@@ -12,30 +12,33 @@ import utils.osu_reader.hit_objects as ho
 from utils.wavetools.audio_file import AudioFile
 
 
-class Audio:
-    def __init__(self, path):
-        self.path = path
+# class Audio:
+#     def __init__(self, path):
+#         self.path = path
 
-    def __str__(self):
-        return f"Path: {self.path}"
+#     def __str__(self):
+#         return f"Path: {self.path}"
 
-    def duration(self):
-        return librosa.get_duration(path=self.path)
+#     def duration(self):
+#         return librosa.get_duration(path=self.path)
 
-    def load_waveform(self):
-        self.waveform, self.sr = torchaudio.load(self.path)
-        return self.waveform, self.sr
+#     def load_waveform(self):
+#         self.waveform, self.sr = torchaudio.load(self.path)
+#         return self.waveform, self.sr
+    
+#     def is_loaded(self):
+#         return hasattr(self, 'waveform')
 
-    def __getitem__(self, key):
-        if isinstance(key, slice):
-            return self.waveform[key[0] * self.sr / 1000, key[1] * self.sr / 1000]
+#     def __getitem__(self, key):
+#         if isinstance(key, slice):
+#             return self.waveform[key[0] * self.sr / 1000, key[1] * self.sr / 1000]
 
 
 class OsuTaikoReader:
     general: dict[str, str]
     editor: dict[str, str]
     metadata: dict[str, str]
-    difficulty: dict[str, str]
+    # difficulty: dict[str, str]
     timing_points: tp.TimingPoints
     hit_objects: ho.HitObjects
     difficulty: Optional[float]
@@ -121,18 +124,24 @@ class OsuTaikoReader:
         return tp.TimingPoints(timing_points)
 
     def _parse_difficulty(self):
-        with open(
-            os.path.join(os.path.dirname(self.path), "difficulty.txt"), "r"
-        ) as file:
-            difficulty = eval(file.read())
-            self.difficulty = difficulty[self.metadata["Version"]]
+        try:
+            with open(
+                os.path.join(os.path.dirname(self.path), "difficulty.txt"), "r"
+            ) as file:
+                difficulty = eval(file.read())
+                self.difficulty = difficulty[self.metadata["Version"]]
+        except:
+            self.difficulty = None
 
     def _parse_audio(self):
         audio_filename = self.general["AudioFilename"]
         audio_path = os.path.join(os.path.dirname(self.path), audio_filename)
         self.audio = AudioFile(audio_path)
+        
+    def load_audio(self):
+        self.audio.load_waveform()
 
-    def bars_arrays(self):
+    def bars_and_arrays(self) -> Generator[tuple[tuple[int, int], list[int]], None, None]:
         duration = self.audio.duration()
         beats = self.timing_points.beats_point(duration)
         # meter = self.timing_points.data[0].meter
@@ -140,7 +149,7 @@ class OsuTaikoReader:
         
         # print(f"{duration=} {beats=} {meter=}")
 
-        bars = []
+        bars: list[tuple[int,int]] = []
 
         for i in range(0, int(len(beats) / meter)):
             beats_in_bar = beats[i * meter : ((i + 1) * meter + 1)]
@@ -172,4 +181,4 @@ if __name__ == "__main__":
     print(reader)
     print(reader.audio.path)
     print(reader.audio.duration())
-    print(list(reader.bars_arrays()))
+    print(list(reader.bars_and_arrays()))

@@ -2,65 +2,64 @@ import os
 import torch
 import torch.utils.data
 from utils.osu_reader import OsuTaikoReader
-from preprocessing.audio import AudioTransformPipeline
+from utils.general import clamp, coalesce
+from dataloader.audio_pipeline import AudioTransformPipeline
+
+# def if_null_return(s,d):
+#     if s is None:
+#         return d
+#     else:
+#         return s
 
 
 class TaikoDataset(torch.utils.data.Dataset):
-    bars_data: list[(int, int, list[int])]  # (reader_i, bar, array)
+    bars: list[tuple[OsuTaikoReader, int, list[int]]]  # (reader_i, bar, array)
 
-    def __init__(self, song_id, sample_rate=25600, hop_length=200, n_mels=128):
-        self.song_id = song_id
-        self.sample_rate = sample_rate
+    def __init__(self, song_folder, ideal_size: tuple[int,int], hop_length=200):
+        self.song_id = song_folder
+        self.ideal_size = ideal_size
         self.hop_length = hop_length
-        self.n_mels = n_mels
         
-        self.bars_data = []
+        self.bars = []
+        
+        osu_files = [f for f in os.listdir(song_folder) if f.endswith(".osu")]
 
-        # Load the folder and music
-        music_folder = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), f"../music/{song_id}")
-        )
-        osu_files = [f for f in os.listdir(music_folder) if f.endswith(".osu")]
-
-        self.readers = []
+        self.readers: list[OsuTaikoReader]  = []
         for f in osu_files:
             try:
-                self.readers.append(OsuTaikoReader(os.path.join(music_folder, f)))
+                self.readers.append(OsuTaikoReader(os.path.join(song_folder, f)))
             except ValueError as e:
                 print(f"Error reading {f}: {e}, skipping...")
                 
         if len(self.readers) == 0:
             return None
         
-        self.audio = self.readers[0].audio.load_waveform()
+        self.audio = self.readers[0].audio
+        self.audio.load_waveform()
 
         # Load all bars
-        for reader_i, reader in enumerate(self.readers):
-            # print(self.readers[reader_i].audio.duration())
-            # print(reader.bars_arrays())
-            for bar, array in reader.bars_arrays():
-                # print(bar, array)
+        for reader in self.readers:
+            for bar, array in reader.bars_and_arrays():
                 if torch.sum(torch.tensor(array)) > 0:
-                    self.bars_data.append((reader_i, bar, array))
-
-        # print(self.bars_data)
+                    self.bars.append((reader, bar, array))
 
     def __len__(self):
-        return len(self.bars_data)
+        return len(self.bars)
 
-    def __getitem__(self, idx):
-        reader_i, bar, array = self.bars_data[idx]
-        # print(reader_i, bar, array)
+    def __getitem__(self, idx: int):
+        reader, bar, array = self.bars[idx]
 
         # Load the audio
-        audio = self.audio[bar[0] : bar[1]]
-        transformer = AudioTransformPipeline(self.audio.sample_rate, self.sample_rate, 1, n_mels=self.n_mels,hop_length=self.hop_length)
+        # if reader.audio.is_loaded() == False:
+        #     reader.audio.load_waveform()
+        
+        audio = self.audio[bar[0]:bar[1]]
+        transformer = AudioTransformPipeline(self.audio.sample_rate(),self.ideal_size[0],self.ideal_size[1],self.hop_length)
         processed_audio = transformer(audio)
+        
+        difficulty = clamp(coalesce(reader.difficulty, 0.0), 0, 10.0)
 
-        # Return the processed audio and the array
-        # return (self.readers[reader_i].difficulty, processed_audio), torch.tensor(array)
-        # Returns only audio for now
-        return (self.readers[reader_i].difficulty/10,torch.tensor(processed_audio)), torch.tensor(array)
+        return torch.tensor(processed_audio), difficulty, torch.tensor(array)
 
 class TaikoDatasetDataset(torch.utils.data.Dataset):
     def __init__(self, folder, sample_rate=25600, hop_length=200, n_mels=128, train_test_split=0.8, train=True):

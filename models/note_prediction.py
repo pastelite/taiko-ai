@@ -3,7 +3,7 @@ from torch import nn
 from torchsummary import summary
 
 class NotePredictionModel(torch.nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size=128, hidden_size=64, output_size=17):
         super(NotePredictionModel,self).__init__()
         # Simple one because this is my first time
         self.conv1 = nn.Sequential(
@@ -26,21 +26,29 @@ class NotePredictionModel(torch.nn.Module):
         self.fc2 = nn.Linear(hidden_size, output_size)
     
     def forward(self, x, diff):
+        # diff = torch.tensor(diff, dtype=torch.float32).unsqueeze(0)
         
         x = self.conv1(x)
+        # print(x.shape)
         x = self.conv2(x)
+        # print(x.shape)
         x = self.flatten(x)
+        # print(x.shape)
         x = self.fc1(x)
+        # print(x.shape)
         
         # print(diff.shape, x.shape)
         combined = torch.cat((diff, x),-1)
         combined = self.attn_fc(combined)
         attn = self.attn(combined)
+        # print(attn.shape)
         x = x*attn
         
+        # print(x.shape)
         x = self.fc2(x)
         return x
     
+    ## Note: diff have to be unsqueezed to be concatenated with x
     def predict(self, x, diff):
         return self.forward(x, diff)
 

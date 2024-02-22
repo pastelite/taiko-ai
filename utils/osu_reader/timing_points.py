@@ -72,7 +72,7 @@ class TimingPoints:
     def inhabited_points(self):
         return [timing for timing in self.data if timing.uninherited]
 
-    def beats_point(self, end: int):
+    def beats_point(self, end: int) -> list[int]:
         timing_points = self.inhabited_points()
         # print(f"{timing_points=}")
         # for timing in timing_points:

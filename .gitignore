@@ -1,3 +1,4 @@
-music
+data/*
 **/__pycache__/
 .env
+**/*.pt
