@@ -1,4 +1,6 @@
-data/*
+data/music/*
+data/music_test/*
+!data/**/put_*.txt
 **/__pycache__/
 .env
 **/*.pt
