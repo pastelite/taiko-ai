@@ -44,7 +44,7 @@ class NotePredictionModel(torch.nn.Module):
     def predict(self, x, diff):
         return self.forward(x, diff)
 
-# def note_prediction_model_summary():
-summary(NotePredictionModel(128, 64, 17), [(1, 128, 128),[1]])
+def note_prediction_model_summary():
+    summary(NotePredictionModel(128, 64, 17), [(1, 128, 128),[1]])
         
                         

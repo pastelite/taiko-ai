@@ -28,6 +28,9 @@ class TaikoDataset(torch.utils.data.Dataset):
                 self.readers.append(OsuTaikoReader(os.path.join(music_folder, f)))
             except ValueError as e:
                 print(f"Error reading {f}: {e}, skipping...")
+                
+        if len(self.readers) == 0:
+            return None
         
         self.audio = self.readers[0].audio.load_waveform()
 
@@ -57,7 +60,7 @@ class TaikoDataset(torch.utils.data.Dataset):
         # Return the processed audio and the array
         # return (self.readers[reader_i].difficulty, processed_audio), torch.tensor(array)
         # Returns only audio for now
-        return (self.readers[reader_i].difficulty,torch.tensor(processed_audio)), torch.tensor(array)
+        return (self.readers[reader_i].difficulty/10,torch.tensor(processed_audio)), torch.tensor(array)
 
 class TaikoDatasetDataset(torch.utils.data.Dataset):
     def __init__(self, folder, sample_rate=25600, hop_length=200, n_mels=128, train_test_split=0.8, train=True):

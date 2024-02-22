@@ -1,6 +1,7 @@
+librosa==0.10.1
 matplotlib==3.7.2
 ossapi==3.4.4
 python-dotenv==1.0.1
-torch==2.2.0 --index-url https://download.pytorch.org/whl/cu118
-torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu118
-librosa==0.10.1
+torch==2.2.0+cu118
+torch_summary==1.4.5
+torchaudio==2.2.0
